@@ -1,0 +1,39 @@
+name: NetAdaptAI iOS Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract project
+        run: |
+          unzip -q NetAdaptAI_CloudBuild_FIXED.zip -d project-src
+
+      - name: Build iOS
+        run: |
+          xcodebuild \
+            -project project-src/NetAdaptAI.xcodeproj \
+            -scheme NetAdaptAI \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            build
+
+      - name: Package app
+        run: |
+          APP=$(find build/Build/Products/Debug-iphonesimulator \
+            -maxdepth 1 -name '*.app' -print -quit)
+          zip -r NetAdaptAI-Simulator.zip "$APP"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NetAdaptAI-build
+          path: NetAdaptAI-Simulator.zip
