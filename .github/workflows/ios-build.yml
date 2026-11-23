@@ -16,7 +16,7 @@ jobs:
         run: |
           unzip -q NetAdaptAI_CloudBuild_FIXED.zip -d project-src
 
-      - name: Build iOS
+      - name: Build Simulator
         run: |
           xcodebuild \
             -project project-src/NetAdaptAI.xcodeproj \
@@ -24,16 +24,35 @@ jobs:
             -sdk iphonesimulator \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build \
+            -derivedDataPath build-simulator \
             build
 
-      - name: Package app
+      - name: Package Simulator
         run: |
-          APP=$(find build/Build/Products/Debug-iphonesimulator \
-            -maxdepth 1 -name '*.app' -print -quit)
+          APP=$(find build-simulator/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' -print -quit)
           zip -r NetAdaptAI-Simulator.zip "$APP"
+
+      - name: Build iPhone
+        run: |
+          xcodebuild \
+            -project project-src/NetAdaptAI.xcodeproj \
+            -scheme NetAdaptAI \
+            -sdk iphoneos \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build-device \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package iPhone
+        run: |
+          APP=$(find build-device/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -print -quit)
+          zip -r NetAdaptAI-iPhone.zip "$APP"
 
       - uses: actions/upload-artifact@v4
         with:
           name: NetAdaptAI-build
-          path: NetAdaptAI-Simulator.zip
+          path: |
+            NetAdaptAI-Simulator.zip
+            NetAdaptAI-iPhone.zip
+          retention-days: 14
